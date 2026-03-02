@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import 'missions_list_screen.dart';
 import 'rescuer_profile_screen.dart';
 
@@ -36,7 +35,7 @@ class _RescuerHomeScreenState extends State<RescuerHomeScreen> {
           unselectedItemColor: const Color(0xFF9E9E9E),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'الرئيسية'),
-            BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), activeIcon: Icon(Icons.assignment), label: 'المهمات'),
+            BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), activeIcon: Icon(Icons.assignment), label: 'البلاغات'),
             BottomNavigationBarItem(icon: Icon(Icons.map_outlined), activeIcon: Icon(Icons.map), label: 'الخريطة'),
             BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'الملف'),
           ],
@@ -259,15 +258,22 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: SizedBox(
-                        height: 180,
+                        height: 200,
                         width: double.infinity,
                         child: Stack(
                           children: [
-                            CustomPaint(size: const Size(double.infinity, 180), painter: _MapPlaceholderPainter()),
-                            const Positioned(top: 60, left: 100, child: _MapDot(color: Color(0xFFEF5350))),
-                            const Positioned(top: 100, right: 120, child: _MapDot(color: Color(0xFFFFEB3B))),
+                            GoogleMap(
+                              initialCameraPosition: const CameraPosition(target: LatLng(24.7136, 46.6753), zoom: 13),
+                              markers: {
+                                const Marker(markerId: MarkerId('m1'), position: LatLng(24.7180, 46.6800), infoWindow: InfoWindow(title: 'بلاغ #1234')),
+                                const Marker(markerId: MarkerId('m2'), position: LatLng(24.7090, 46.6700), infoWindow: InfoWindow(title: 'بلاغ #1235')),
+                              },
+                              zoomControlsEnabled: false,
+                              myLocationButtonEnabled: false,
+                              liteModeEnabled: true,
+                            ),
                             Positioned(
-                              top: 10, left: 10,
+                              top: 10, right: 10,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
@@ -598,38 +604,4 @@ class _DroneCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MapDot extends StatelessWidget {
-  const _MapDot({required this.color});
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 16, height: 16,
-      decoration: BoxDecoration(
-        color: color, shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-        boxShadow: [BoxShadow(color: color.withOpacity(0.4), blurRadius: 6, spreadRadius: 2)],
-      ),
-    );
-  }
-}
-
-class _MapPlaceholderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), Paint()..color = const Color(0xFFB8DDE8));
-    final gridPaint = Paint()..color = const Color(0xFF9ECFDB)..strokeWidth = 1;
-    for (double x = 0; x < size.width; x += 40) canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    for (double y = 0; y < size.height; y += 40) canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    final roadPaint = Paint()..color = Colors.white.withOpacity(0.6)..strokeWidth = 6..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(0, size.height * 0.4), Offset(size.width, size.height * 0.4), roadPaint);
-    canvas.drawLine(Offset(size.width * 0.35, 0), Offset(size.width * 0.35, size.height), roadPaint);
-    canvas.drawLine(Offset(size.width * 0.7, 0), Offset(size.width * 0.7, size.height), roadPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
