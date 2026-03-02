@@ -55,7 +55,7 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
       final Map<String, String> replies = {
         'ماذا ترى؟': '👁️ أرى منطقة مفتوحة، لا يوجد أشخاص في النطاق المباشر حالياً.',
         'تحرك للأمام': '✅ جارٍ التحرك للأمام 50 متراً.',
-        'التق صورة الآن': '📸 تم التقاط صورة وإرسالها.',
+        'التقط صورة الآن': '📸 تم التقاط صورة وإرسالها.',
         'عد للقاعدة': '🔄 جارٍ العودة إلى نقطة الانطلاق.',
       };
       setState(() {
@@ -345,14 +345,14 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
                 const Divider(height: 1),
                 // خيارات سريعة
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 6,
                     children: [
                       _QuickChip(label: 'ماذا ترى؟', onTap: () => _sendQuick('ماذا ترى؟')),
                       _QuickChip(label: 'تحرك للأمام', onTap: () => _sendQuick('تحرك للأمام')),
-                      _QuickChip(label: 'التق صورة', onTap: () => _sendQuick('التق صورة')),
+                      _QuickChip(label: 'التقط صورة', onTap: () => _sendQuick('التقط صورة')),
                       _QuickChip(label: 'عد للقاعدة', onTap: () => _sendQuick('عد للقاعدة')),
                     ],
                   ),
@@ -625,7 +625,7 @@ class _SuspiciousPointCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900))),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(color: badge, borderRadius: BorderRadius.circular(18)),
                 child: Text(point.status,
                     style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
@@ -668,7 +668,7 @@ class _QuickChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: const Color(0xFF3D5A6C).withOpacity(0.08),
           borderRadius: BorderRadius.circular(20),
