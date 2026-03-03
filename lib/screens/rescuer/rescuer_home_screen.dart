@@ -7,19 +7,26 @@ import 'rescuer_create_report_screen.dart';
 import 'rescuer_map_screen.dart';
 
 class RescuerHomeScreen extends StatefulWidget {
-  const RescuerHomeScreen({super.key});
+  final int initialIndex;
+  const RescuerHomeScreen({super.key, this.initialIndex = 0});
 
   @override
   State<RescuerHomeScreen> createState() => _RescuerHomeScreenState();
 }
 
 class _RescuerHomeScreenState extends State<RescuerHomeScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   final List<Widget> _screens = const [
     HomeDashboard(),
     MissionsListScreen(),
-    Center(child: Text('الخريطة')),
+    RescuerMapScreen(),
     RescuerProfileScreen(),
   ];
 
@@ -141,7 +148,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton(
-                        onPressed: () => Navigator.of(context).pushNamed('/rescuer/mission-details'),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RescuerCreateReportScreen())),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3D5A6C),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
