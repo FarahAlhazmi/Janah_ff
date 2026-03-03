@@ -52,6 +52,7 @@ class _GuardianForgotPasswordScreenState extends State<GuardianForgotPasswordScr
         body: SafeArea(
           child: Column(
             children: [
+              // ── HEADER ──
               Container(
                 width: double.infinity,
                 height: 80,
@@ -65,62 +66,88 @@ class _GuardianForgotPasswordScreenState extends State<GuardianForgotPasswordScr
                 child: Stack(
                   children: [
                     Positioned(
-                      right: 16,
-                      top: 20,
+                      right: 16, top: 20,
                       child: IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
                       ),
                     ),
                     const Center(
-                      child: Text(
-                        'نسيت كلمة المرور',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
-                      ),
+                      child: Text('نسيت كلمة المرور',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
                     ),
                   ],
                 ),
               ),
+
+              const SizedBox(height: 40),
+
+              // ── CARD ──
               Padding(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 30),
-                      const Text(
-                        'ادخل بريدك الالكتروني وسنرسل لك رابط اعادة تعيين كلمة المرور',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 30),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: 'البريد الالكتروني',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        validator: (v) => v!.isEmpty ? 'ادخل البريد الالكتروني' : null,
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleReset,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3D5A6C),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))],
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3D5A6C).withOpacity(0.08),
+                            shape: BoxShape.circle,
                           ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text('ارسال', style: TextStyle(fontSize: 18, color: Colors.white)),
+                          child: const Icon(Icons.lock_reset_outlined, color: Color(0xFF3D5A6C), size: 36),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        const Text('إعادة تعيين كلمة المرور',
+                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF2D2D2D))),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'ادخل بريدك الالكتروني وسنرسل لك رابط اعادة تعيين كلمة المرور',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: Color(0xFF757575), height: 1.5),
+                        ),
+                        const SizedBox(height: 24),
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'البريد الالكتروني',
+                            hintText: 'example@email.com',
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3D5A6C), width: 2)),
+                            filled: true,
+                            fillColor: const Color(0xFFF9F9F9),
+                          ),
+                          validator: (v) => v!.isEmpty ? 'ادخل البريد الالكتروني' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _handleReset,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3D5A6C),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Text('إرسال',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
