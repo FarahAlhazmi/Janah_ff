@@ -80,9 +80,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
   String _timeAgo(Timestamp? ts) {
     if (ts == null) return '';
     final diff = DateTime.now().difference(ts.toDate());
-    if (diff.inMinutes < 60) return 'منذ \${diff.inMinutes} دقيقة';
-    if (diff.inHours < 24) return 'منذ \${diff.inHours} ساعة';
-    return 'منذ \${diff.inDays} يوم';
+    if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
+    if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
+    return 'منذ ${diff.inDays} يوم';
   }
 
   @override
@@ -110,9 +110,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           children: [
                             const Text('مرحباً بك', style: TextStyle(fontSize: 12, color: Colors.white70)),
                             const SizedBox(height: 2),
-                            Text(_rescuerName.isEmpty ? '...' : _rescuerName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                            Text(_rescuerName.isEmpty ? '...' : _rescuerName,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
                             const SizedBox(height: 4),
-                            Text(_teamNumber.isNotEmpty ? 'فريق الإنقاذ - \$_teamNumber' : 'فريق الإنقاذ', style: const TextStyle(fontSize: 12, color: Colors.white60)),
+                            Text(_teamNumber.isNotEmpty ? 'فريق الإنقاذ - $_teamNumber' : 'فريق الإنقاذ',
+                                style: const TextStyle(fontSize: 12, color: Colors.white60)),
                           ],
                         ),
                       ],
@@ -134,7 +136,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                   padding: const EdgeInsets.all(4),
                                   decoration: const BoxDecoration(color: Color(0xFFEF5350), shape: BoxShape.circle),
                                   constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                                  child: Text('\$unread', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+                                  child: Text('$unread',
+                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                                      textAlign: TextAlign.center),
                                 ),
                               ),
                           ],
@@ -158,10 +162,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     final inProgress = docs.where((d) => (d.data() as Map)['status'] == 'inProgress').length;
                     final found = docs.where((d) => (d.data() as Map)['status'] == 'found').length;
                     final total = docs.length;
+                    final rate = total == 0 ? '0%' : '${((found / total) * 100).toInt()}%';
                     return Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
+                      decoration: BoxDecoration(
+                        color: Colors.white, borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -173,23 +180,19 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              Expanded(child: _StatCard(title: 'بلاغات نشطة', count: '\$active', icon: Icons.flag_rounded, color: const Color(0xFFEF5350))),
+                              Expanded(child: _StatCard(title: 'بلاغات نشطة', count: '$active', icon: Icons.flag_rounded, color: const Color(0xFFEF5350))),
                               const SizedBox(width: 10),
-                              Expanded(child: _StatCard(title: 'قيد المتابعة', count: '\$inProgress', icon: Icons.pending_actions, color: const Color(0xFF2196F3))),
+                              Expanded(child: _StatCard(title: 'قيد المتابعة', count: '$inProgress', icon: Icons.pending_actions, color: const Color(0xFF2196F3))),
                               const SizedBox(width: 10),
-                              Expanded(child: _StatCard(title: 'تم العثور', count: '\$found', icon: Icons.check_circle, color: const Color(0xFF00D995))),
+                              Expanded(child: _StatCard(title: 'تم العثور', count: '$found', icon: Icons.check_circle, color: const Color(0xFF00D995))),
                             ],
                           ),
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              Expanded(child: _StatCard(
-                                title: 'معدل النجاح',
-                                count: total == 0 ? '0%' : '\${((found / total) * 100).toInt()}%',
-                                icon: Icons.trending_up, color: const Color(0xFF00D995),
-                              )),
+                              Expanded(child: _StatCard(title: 'معدل النجاح', count: rate, icon: Icons.trending_up, color: const Color(0xFF00D995))),
                               const SizedBox(width: 10),
-                              Expanded(child: _StatCard(title: 'إجمالي البلاغات', count: '\$total', icon: Icons.assignment, color: const Color(0xFF9C27B0))),
+                              Expanded(child: _StatCard(title: 'إجمالي البلاغات', count: '$total', icon: Icons.assignment, color: const Color(0xFF9C27B0))),
                             ],
                           ),
                         ],
@@ -200,14 +203,16 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ),
             ),
 
-            // البلاغات النشطة من Firestore
+            // البلاغات النشطة
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
+                  decoration: BoxDecoration(
+                    color: Colors.white, borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
                   child: Column(
                     children: [
                       Row(
@@ -221,7 +226,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       StreamBuilder<QuerySnapshot>(
                         stream: _db.collection('reports').where('status', isEqualTo: 'active').orderBy('createdAt', descending: true).limit(3).snapshots(),
                         builder: (context, snap) {
-                          if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                          if (snap.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(color: Color(0xFF3D5A6C)));
+                          }
                           final docs = snap.data?.docs ?? [];
                           if (docs.isEmpty) {
                             return const Padding(
@@ -257,8 +264,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
+                  decoration: BoxDecoration(
+                    color: Colors.white, borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -314,8 +323,10 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
+      decoration: BoxDecoration(
+        color: Colors.white, borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
       child: Column(
         children: [
           Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
