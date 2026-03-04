@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'mission_details_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'Verification_screen.dart';
 
 class MissionControlScreen extends StatefulWidget {
@@ -13,7 +13,6 @@ class MissionControlScreen extends StatefulWidget {
 
 class _MissionControlScreenState extends State<MissionControlScreen> {
   late bool _missionStarted;
-  bool _showDroneInput = false;
   final TextEditingController _droneCommandController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
   final List<_ChatMessage> _chatMessages = [];
@@ -28,7 +27,7 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
     super.initState();
     _missionStarted = widget.startActive;
     if (_missionStarted) {
-      _chatMessages.add(_ChatMessage(text: '🚁 مرحباً، أنا جناح. تم تفعيل نظام البحث والإنقاذ. جاهز لاستقبال أوامرك، كيف يمكنني المساعدة؟', isBot: true));
+      _chatMessages.add(_ChatMessage(text: '🤖 مرحباً، أنا جناح. تم تفعيل نظام البحث والإنقاذ. جاهز لاستقبال أوامرك، كيف يمكنني المساعدة؟', isBot: true));
     }
   }
 
@@ -39,40 +38,41 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
     super.dispose();
   }
 
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_chatScrollController.hasClients) {
+        _chatScrollController.animateTo(
+          _chatScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   void _startMission() {
     setState(() {
       _missionStarted = true;
-      _chatMessages.add(_ChatMessage(text: '🚁 مرحباً، أنا جناح. تم تفعيل نظام البحث والإنقاذ. جاهز لاستقبال أوامرك، كيف يمكنني المساعدة؟', isBot: true));
+      _chatMessages.add(_ChatMessage(text: '🤖 مرحباً، أنا جناح. تم تفعيل نظام البحث والإنقاذ. جاهز لاستقبال أوامرك، كيف يمكنني المساعدة؟', isBot: true));
     });
   }
 
   void _sendQuick(String text) {
-    setState(() {
-      _chatMessages.add(_ChatMessage(text: text, isBot: false));
-    });
+    setState(() => _chatMessages.add(_ChatMessage(text: text, isBot: false)));
+    _scrollToBottom();
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
-      final Map<String, String> replies = {
-        'ماذا ترى؟': '👁️ أرى منطقة مفتوحة، لا يوجد أشخاص في النطاق المباشر حالياً.',
+      final replies = {
+        'ماذا ترى؟': '🎥 أرى منطقة مفتوحة، لا يوجد أشخاص في النطاق المباشر حالياً.',
         'تحرك للأمام': '✅ جارٍ التحرك للأمام 50 متراً.',
         'التقط صورة الآن': '📸 تم التقاط صورة وإرسالها.',
-        'عد للقاعدة': '🔄 جارٍ العودة إلى نقطة الانطلاق.',
+        'عد للقاعدة': '🏠 جارٍ العودة إلى نقطة الانطلاق.',
       };
-      setState(() {
-        _chatMessages.add(_ChatMessage(
-          text: replies[text] ?? '✅ تم تنفيذ الأمر.',
-          isBot: true,
-        ));
-      });
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (_chatScrollController.hasClients) {
-          _chatScrollController.animateTo(
-            _chatScrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+      setState(() => _chatMessages.add(_ChatMessage(
+        text: replies[text] ?? '✅ تم تنفيذ الأمر.',
+        isBot: true,
+      )));
+      _scrollToBottom();
     });
   }
 
@@ -83,29 +83,11 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
       _chatMessages.add(_ChatMessage(text: text, isBot: false));
       _droneCommandController.clear();
     });
+    _scrollToBottom();
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
-      setState(() {
-        _chatMessages.add(_ChatMessage(text: '✅ تم استقبال الأمر وتنفيذه', isBot: true));
-      });
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (_chatScrollController.hasClients) {
-          _chatScrollController.animateTo(
-            _chatScrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-    });
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_chatScrollController.hasClients) {
-        _chatScrollController.animateTo(
-          _chatScrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
+      setState(() => _chatMessages.add(_ChatMessage(text: '✅ تم استقبال الأمر وتنفيذه', isBot: true)));
+      _scrollToBottom();
     });
   }
 
@@ -121,28 +103,16 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
             SizedBox(width: 8),
             Text('هبوط طارئ', style: TextStyle(color: Color(0xFFEF5350), fontWeight: FontWeight.w800)),
           ]),
-          content: const Text('سيتم إصدار أمر هبوط طارئ فوري للدرون. هل أنت متأكد؟',
-              style: TextStyle(fontSize: 14)),
+          content: const Text('سيتم إصدار أمر هبوط طارئ فوري للدرون. هل أنت متأكد؟', style: TextStyle(fontSize: 14)),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                setState(() {
-                  _chatMessages.add(_ChatMessage(text: '🚨 صدر أمر هبوط طارئ! الدرون يهبط الآن...', isBot: true));
-                });
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  if (_chatScrollController.hasClients) {
-                    _chatScrollController.animateTo(
-                      _chatScrollController.position.maxScrollExtent,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    );
-                  }
-                });
+                setState(() => _chatMessages.add(_ChatMessage(text: '🚨 صدر أمر هبوط طارئ! الدرون يهبط الآن...', isBot: true)));
+                _scrollToBottom();
               },
-              style: ElevatedButton.styleFrom(backgroundColor: _red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: ElevatedButton.styleFrom(backgroundColor: _red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               child: const Text('تأكيد الهبوط', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
             ),
           ],
@@ -150,9 +120,6 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
       ),
     );
   }
-
-  // بيانات المهمة الحالية
-  MissionData get _missionData => missionsMap[widget.reportId] ?? missionsMap['#1234']!;
 
   @override
   Widget build(BuildContext context) {
@@ -162,49 +129,36 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
         backgroundColor: _bg,
         body: Column(
           children: [
-            // ── HEADER ──
+            // HEADER
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF2E4A5A), _navy],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
+                gradient: LinearGradient(colors: [Color(0xFF2E4A5A), _navy], begin: Alignment.topCenter, end: Alignment.bottomCenter),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(22)),
               ),
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 10,
-                bottom: 16, right: 8, left: 16,
-              ),
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, bottom: 16, right: 8, left: 16),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero, constraints: const BoxConstraints(),
                   ),
                   Expanded(
-                    child: Text('التحكم بالمهمة ${widget.reportId}',
-                        textAlign: TextAlign.center,
+                    child: Text('التحكم بالمهمة', textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
                   ),
                   const SizedBox(width: 32),
                 ],
               ),
             ),
-
-            Expanded(
-              child: _missionStarted ? _buildActiveState() : _buildReadyState(),
-            ),
+            Expanded(child: _missionStarted ? _buildActiveState() : _buildReadyState()),
           ],
         ),
       ),
     );
   }
 
-  // ── جاهز للبدء ──
   Widget _buildReadyState() {
     return Center(
       child: Padding(
@@ -213,8 +167,7 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
+            color: Colors.white, borderRadius: BorderRadius.circular(22),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 6))],
           ),
           child: Column(
@@ -226,24 +179,17 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
                 child: const Icon(Icons.radar, color: _navy, size: 52),
               ),
               const SizedBox(height: 20),
-              const Text('جاهز للبدء',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF2D2D2D))),
+              const Text('جاهز للبدء', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF2D2D2D))),
               const SizedBox(height: 8),
-              const Text('اضغط على الزر أدناه لبدء المهمة',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF757575)), textAlign: TextAlign.center),
+              const Text('اضغط على الزر أدناه لبدء المهمة', style: TextStyle(fontSize: 14, color: Color(0xFF757575)), textAlign: TextAlign.center),
               const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity, height: 54,
                 child: ElevatedButton.icon(
                   onPressed: _startMission,
                   icon: const Icon(Icons.bolt, color: Colors.white, size: 22),
-                  label: const Text('بدء المهمة',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
+                  label: const Text('بدء المهمة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(backgroundColor: _green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
                 ),
               ),
             ],
@@ -253,266 +199,203 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
     );
   }
 
-  // ── حالة نشطة ──
   Widget _buildActiveState() {
-    final data = _missionData;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          const SizedBox(height: 8),
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('reports').doc(widget.reportId).snapshots(),
+      builder: (context, snap) {
+        final data = snap.data?.data() as Map<String, dynamic>? ?? {};
+        final childName = data['childName'] ?? '';
 
-          // بادج المهمة نشطة
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-            decoration: BoxDecoration(color: _green, borderRadius: BorderRadius.circular(16)),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('المهمة نشطة', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                Row(children: [
-                  Text('جارية الآن', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                  SizedBox(width: 8),
-                  Icon(Icons.circle, color: Colors.white, size: 10),
-                ]),
-              ],
-            ),
-          ),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
 
-          const SizedBox(height: 12),
-
-          // ── هبوط طارئ تحت البادج ──
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: ElevatedButton.icon(
-              onPressed: _emergencyLanding,
-              icon: const Icon(Icons.emergency_outlined, color: Colors.white, size: 24),
-              label: const Text('هبوط طارئ',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                elevation: 0,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── شات مع الدرون ──
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
-            child: Column(
-              children: [
-                // هيدر الشات
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: _navy.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(Icons.flight, color: _navy, size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('جناح - نظام البحث والإنقاذ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-                      Text('DR-01 • متصل', style: TextStyle(fontSize: 11, color: Color(0xFF00D995))),
+              // بادج المهمة نشطة
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                decoration: BoxDecoration(color: _green, borderRadius: BorderRadius.circular(16)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(childName.isNotEmpty ? 'مهمة: $childName' : 'المهمة نشطة',
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                    const Row(children: [
+                      Text('جارية الآن', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                      SizedBox(width: 8),
+                      Icon(Icons.circle, color: Colors.white, size: 10),
                     ]),
-                  ]),
+                  ],
                 ),
-                const Divider(height: 1),
-                // رسائل الشات
-                SizedBox(
-                  height: 220,
-                  child: _chatMessages.isEmpty
-                      ? const Center(
-                          child: Text('لا توجد رسائل بعد', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)))
-                      : ListView.builder(
-                          controller: _chatScrollController,
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _chatMessages.length,
-                          itemBuilder: (_, i) => _buildChatBubble(_chatMessages[i]),
-                        ),
-                ),
-                const Divider(height: 1),
-                // خيارات سريعة
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      _QuickChip(label: 'ماذا ترى؟', onTap: () => _sendQuick('ماذا ترى؟')),
-                      _QuickChip(label: 'تحرك للأمام', onTap: () => _sendQuick('تحرك للأمام')),
-                      _QuickChip(label: 'التقط صورة', onTap: () => _sendQuick('التقط صورة')),
-                      _QuickChip(label: 'عد للقاعدة', onTap: () => _sendQuick('عد للقاعدة')),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                // حقل الإرسال
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _droneCommandController,
-                        textAlign: TextAlign.right,
-                        decoration: InputDecoration(
-                          hintText: 'اكتب أمراً للدرون...',
-                          hintTextDirection: TextDirection.rtl,
-                          hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9E9E9E)),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: _navy, width: 2)),
-                          filled: true, fillColor: const Color(0xFFF9F9F9),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          isDense: true,
-                        ),
-                        onSubmitted: (_) => _sendCommand(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: _sendCommand,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: _navy, shape: BoxShape.circle),
-                        child: const Icon(Icons.send, color: Colors.white, size: 20),
-                      ),
-                    ),
-                  ]),
-                ),
-              ],
-            ),
-          ),
+              ),
 
-          const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-          // ── بث مباشر من الدرون ──
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(children: [
-                  Icon(Icons.videocam, color: _navy, size: 18),
-                  SizedBox(width: 8),
-                  Text('بث مباشر من الدرون', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                  Spacer(),
-                  _LiveBadge(),
-                ]),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: double.infinity,
-                    height: 200,
-                    color: const Color(0xFF1A1A2E),
-                    child: Stack(children: [
-                      Center(child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              // هبوط طارئ
+              SizedBox(
+                width: double.infinity, height: 60,
+                child: ElevatedButton.icon(
+                  onPressed: _emergencyLanding,
+                  icon: const Icon(Icons.emergency_outlined, color: Colors.white, size: 24),
+                  label: const Text('هبوط طارئ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1)),
+                  style: ElevatedButton.styleFrom(backgroundColor: _red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), padding: const EdgeInsets.symmetric(vertical: 14), elevation: 0),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // شات مع الدرون
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: _navy.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                          child: const Icon(Icons.flight, color: _navy, size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('جناح - نظام البحث والإنقاذ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                          Text('متصل', style: TextStyle(fontSize: 11, color: Color(0xFF00D995))),
+                        ]),
+                      ]),
+                    ),
+                    const Divider(height: 1),
+                    SizedBox(
+                      height: 220,
+                      child: _chatMessages.isEmpty
+                          ? const Center(child: Text('لا توجد رسائل بعد', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)))
+                          : ListView.builder(
+                              controller: _chatScrollController,
+                              padding: const EdgeInsets.all(12),
+                              itemCount: _chatMessages.length,
+                              itemBuilder: (_, i) => _buildChatBubble(_chatMessages[i]),
+                            ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                      child: Wrap(
+                        spacing: 8, runSpacing: 6,
                         children: [
-                          Icon(Icons.videocam, color: Colors.white.withOpacity(0.3), size: 48),
-                          const SizedBox(height: 8),
-                          Text('DR-01 • جاري البث',
-                              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+                          _QuickChip(label: 'ماذا ترى؟', onTap: () => _sendQuick('ماذا ترى؟')),
+                          _QuickChip(label: 'تحرك للأمام', onTap: () => _sendQuick('تحرك للأمام')),
+                          _QuickChip(label: 'التقط صورة الآن', onTap: () => _sendQuick('التقط صورة الآن')),
+                          _QuickChip(label: 'عد للقاعدة', onTap: () => _sendQuick('عد للقاعدة')),
                         ],
-                      )),
-                      Positioned(top: 10, right: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: _red, borderRadius: BorderRadius.circular(6)),
-                          child: const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-                        ),
                       ),
-                      Positioned(bottom: 10, left: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(8)),
-                          child: const Text('18:14:40', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                        ),
-                      ),
-                    ]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── نقاط الاشتباه ──
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(children: [
-                  Icon(Icons.warning_amber_rounded, color: Color(0xFFFFB300), size: 18),
-                  SizedBox(width: 8),
-                  Text('نقاط الاشتباه', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                ]),
-                const SizedBox(height: 14),
-                data.points.isEmpty
-                    ? const Center(child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        child: Text('لا توجد نقاط اشتباه حتى الآن',
-                            style: TextStyle(color: Color(0xFF9E9E9E))),
-                      ))
-                    : Column(
-                        children: data.points.map((p) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _SuspiciousPointCard(
-                            point: p,
-                            onTap: () => Navigator.push(context, MaterialPageRoute(
-                              builder: (_) => VerificationScreen(reportId: data.reportId, pointNumber: p.number),
-                            )),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _droneCommandController,
+                            textAlign: TextAlign.right,
+                            decoration: InputDecoration(
+                              hintText: 'اكتب أمراً للدرون...',
+                              hintTextDirection: TextDirection.rtl,
+                              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9E9E9E)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: _navy, width: 2)),
+                              filled: true, fillColor: const Color(0xFFF9F9F9),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              isDense: true,
+                            ),
+                            onSubmitted: (_) => _sendCommand(),
                           ),
-                        )).toList(),
-                      ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // ── المتابعة إلى التفاصيل ──
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _navy,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: _sendCommand,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: _navy, shape: BoxShape.circle),
+                            child: const Icon(Icons.send, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
+                ),
               ),
-              child: const Text('المتابعة إلى التفاصيل',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
-            ),
+
+              const SizedBox(height: 16),
+
+              // بث مباشر
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(children: [
+                      Icon(Icons.videocam, color: _navy, size: 18),
+                      SizedBox(width: 8),
+                      Text('بث مباشر من الدرون', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Spacer(),
+                      _LiveBadge(),
+                    ]),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: double.infinity, height: 200,
+                        color: const Color(0xFF1A1A2E),
+                        child: Stack(children: [
+                          Center(child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.videocam, color: Colors.white.withOpacity(0.3), size: 48),
+                              const SizedBox(height: 8),
+                              Text('جناح • جاري البث', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+                            ],
+                          )),
+                          Positioned(top: 10, right: 10,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: _red, borderRadius: BorderRadius.circular(6)),
+                              child: const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // زر المتابعة للتفاصيل
+              SizedBox(
+                width: double.infinity, height: 52,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(backgroundColor: _navy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
+                  child: const Text('المتابعة إلى التفاصيل', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
-          const SizedBox(height: 24),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -523,11 +406,7 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
         mainAxisAlignment: msg.isBot ? MainAxisAlignment.start : MainAxisAlignment.end,
         children: [
           if (msg.isBot) ...[
-            Container(
-              width: 28, height: 28,
-              decoration: BoxDecoration(color: _navy.withOpacity(0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.flight, color: _navy, size: 14),
-            ),
+            Container(width: 28, height: 28, decoration: BoxDecoration(color: _navy.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.flight, color: _navy, size: 14)),
             const SizedBox(width: 6),
           ],
           Flexible(
@@ -536,17 +415,12 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
               decoration: BoxDecoration(
                 color: msg.isBot ? const Color(0xFFF0F4F7) : _navy,
                 borderRadius: BorderRadius.only(
-                  topRight: const Radius.circular(16),
-                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16), topLeft: const Radius.circular(16),
                   bottomRight: msg.isBot ? const Radius.circular(16) : const Radius.circular(4),
                   bottomLeft: msg.isBot ? const Radius.circular(4) : const Radius.circular(16),
                 ),
               ),
-              child: Text(msg.text,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: msg.isBot ? const Color(0xFF2D2D2D) : Colors.white,
-                  )),
+              child: Text(msg.text, style: TextStyle(fontSize: 13, color: msg.isBot ? const Color(0xFF2D2D2D) : Colors.white)),
             ),
           ),
         ],
@@ -561,99 +435,30 @@ class _ChatMessage {
   _ChatMessage({required this.text, required this.isBot});
 }
 
-// ── لقطات الكاميرا ──
-class _CameraThumb extends StatelessWidget {
-  const _CameraThumb({required this.time});
-  final String time;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        color: const Color(0xFFE0E0E0),
-        child: Stack(children: [
-          Center(child: Icon(Icons.camera_alt_outlined, size: 34, color: Colors.grey.shade600)),
-          Positioned(
-            bottom: 10, left: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.55),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(children: [
-                const Icon(Icons.camera_alt, size: 12, color: Colors.white),
-                const SizedBox(width: 6),
-                Text(time, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-              ]),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
-// ── كارد نقطة الاشتباه ──
 class _SuspiciousPointCard extends StatelessWidget {
   const _SuspiciousPointCard({required this.point, required this.onTap});
-  final SuspiciousPoint point;
+  final dynamic point;
   final VoidCallback onTap;
-
-  bool get isBad => point.status.trim() == 'غير مطابق';
-  Color get bg => isBad ? const Color(0xFFFFEBEE) : const Color(0xFFFFF8E1);
-  Color get border => isBad ? const Color(0xFFEF5350) : const Color(0xFFFFD54F);
-  Color get badge => isBad ? const Color(0xFFEF5350) : const Color(0xFFFFB300);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: border, width: 1.6),
+        color: const Color(0xFFFFF8E1), borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFD54F), width: 1.6),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: Text('نقطة اشتباه #${point.number}',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900))),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(color: badge, borderRadius: BorderRadius.circular(18)),
-                child: Text(point.status,
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(point.time, style: const TextStyle(fontSize: 12, color: Color(0xFF757575))),
-          const SizedBox(height: 6),
-          Row(children: [
-            const Icon(Icons.location_on, size: 14, color: Color(0xFFEF5350)),
-            const SizedBox(width: 6),
-            Expanded(child: Text(point.location,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF757575)))),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(12),
-              child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                Text('عرض والتحقق',
-                    style: TextStyle(color: Color(0xFF3D5A6C), fontWeight: FontWeight.w900, fontSize: 12)),
-                SizedBox(width: 4),
-                Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF3D5A6C)),
-              ]),
-            ),
+      child: Row(children: [
+        Expanded(child: Text('نقطة اشتباه', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900))),
+        InkWell(
+          onTap: onTap,
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Text('عرض والتحقق', style: TextStyle(color: Color(0xFF3D5A6C), fontWeight: FontWeight.w900, fontSize: 12)),
+            SizedBox(width: 4),
+            Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF3D5A6C)),
           ]),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 }
@@ -670,12 +475,10 @@ class _QuickChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF3D5A6C).withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
+          color: const Color(0xFF3D5A6C).withOpacity(0.08), borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFF3D5A6C).withOpacity(0.25)),
         ),
-        child: Text(label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3D5A6C))),
+        child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3D5A6C))),
       ),
     );
   }
@@ -693,33 +496,6 @@ class _LiveBadge extends StatelessWidget {
         SizedBox(width: 4),
         Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
       ]),
-    );
-  }
-}
-
-class _QuickCmd extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _QuickCmd({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: const Color(0xFF3D5A6C).withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF3D5A6C).withOpacity(0.2)),
-        ),
-        child: Text(label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF3D5A6C),
-            )),
-      ),
     );
   }
 }
