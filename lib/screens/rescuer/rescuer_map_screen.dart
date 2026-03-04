@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geolocator/geolocator.dart';
 import 'mission_details_screen.dart';
 
 class RescuerMapScreen extends StatefulWidget {
@@ -35,7 +34,7 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
     if (_selectedFilter != 'الكل') {
       final statusMap = {
         'نشط': 'active',
-        'قيد المتابعة': 'following',
+        'قيد المتابعة': 'inProgress',
         'تم العثور': 'found',
       };
       query = query.where('status', isEqualTo: statusMap[_selectedFilter]);
@@ -55,7 +54,7 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
       final status = data['status'] ?? 'active';
       final hue = status == 'found'
           ? BitmapDescriptor.hueGreen
-          : status == 'following'
+          : status == 'inProgress'
               ? BitmapDescriptor.hueAzure
               : BitmapDescriptor.hueRed;
 
@@ -66,8 +65,8 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
           icon: BitmapDescriptor.defaultMarkerWithHue(hue),
           infoWindow: InfoWindow(
             title: data['childName'] ?? 'طفل مفقود',
-            snippet: '📍 ${data['location'] ?? ''} • ⏰ ${data['disappearTime'] ?? ''}',
-            onTap: () => Navigator.of(context).pushNamed('/rescuer/mission-details', arguments: doc.id),
+            snippet: '📍 ${data['location'] ?? ''}',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MissionDetailsScreen(reportId: doc.id))),
           ),
         ),
       );
@@ -101,7 +100,7 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              // ── HEADER ──
+              // HEADER
               Container(
                 width: double.infinity,
                 color: const Color(0xFF3D5A6C),
@@ -122,7 +121,7 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
                           child: Row(children: [
                             const Icon(Icons.circle, color: Color(0xFF00D995), size: 10),
                             const SizedBox(width: 6),
-                            Text('\$_activeCount بلاغ نشط',
+                            Text('$_activeCount بلاغ نشط',
                                 style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600)),
                           ]),
                         ),
@@ -164,7 +163,7 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
                 ),
               ),
 
-              // ── الخريطة ──
+              // الخريطة
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: Color(0xFF3D5A6C)))
@@ -179,7 +178,6 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
                             zoomControlsEnabled: false,
                             mapToolbarEnabled: false,
                           ),
-                          // زر تحديث
                           Positioned(
                             bottom: 24, left: 16,
                             child: FloatingActionButton.small(
@@ -188,12 +186,11 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
                               child: const Icon(Icons.refresh, color: Colors.white),
                             ),
                           ),
-                          // زر موقعي
                           Positioned(
                             bottom: 24, right: 16,
                             child: FloatingActionButton.small(
                               onPressed: () => _mapController?.animateCamera(
-                                CameraUpdate.newLatLngZoom(_defaultCenter, 11)),
+                                  CameraUpdate.newLatLngZoom(_defaultCenter, 11)),
                               backgroundColor: Colors.white,
                               child: const Icon(Icons.my_location, color: Color(0xFF3D5A6C)),
                             ),
@@ -215,7 +212,7 @@ class _RescuerMapScreenState extends State<RescuerMapScreen> {
                       ),
               ),
 
-              // ── مفتاح الألوان ──
+              // مفتاح الألوان
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 color: Colors.white,
