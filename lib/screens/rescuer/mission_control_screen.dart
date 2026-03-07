@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'Verification_screen.dart';
+
+// ← غيري هذا الـ IP لـ IP الكمبيوتر اللي يشتغل عليه TypeFly
+const String _TYPEFLY_IP = '192.168.8.75';
+const String _TYPEFLY_URL = 'http://$_TYPEFLY_IP:50000';
 
 class MissionControlScreen extends StatefulWidget {
   final String reportId;
@@ -60,20 +66,7 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
   void _sendQuick(String text) {
     setState(() => _chatMessages.add(_ChatMessage(text: text, isBot: false)));
     _scrollToBottom();
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      final replies = {
-        'ماذا ترى؟': '🎥 أرى منطقة مفتوحة، لا يوجد أشخاص في النطاق المباشر حالياً.',
-        'تحرك للأمام': '✅ جارٍ التحرك للأمام 50 متراً.',
-        'التقط صورة الآن': '📸 تم التقاط صورة وإرسالها.',
-        'عد للقاعدة': '🏠 جارٍ العودة إلى نقطة الانطلاق.',
-      };
-      setState(() => _chatMessages.add(_ChatMessage(
-        text: replies[text] ?? '✅ تم تنفيذ الأمر.',
-        isBot: true,
-      )));
-      _scrollToBottom();
-    });
+    _sendToTypefly(text);
   }
 
   void _sendCommand() {
@@ -84,11 +77,39 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
       _droneCommandController.clear();
     });
     _scrollToBottom();
-    Future.delayed(const Duration(milliseconds: 800), () {
+    _sendToTypefly(text);
+  }
+
+  Future<void> _sendToTypefly(String command) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_TYPEFLY_URL/api/command'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'message': command}),
+      ).timeout(const Duration(seconds: 10));
+
       if (!mounted) return;
-      setState(() => _chatMessages.add(_ChatMessage(text: '✅ تم استقبال الأمر وتنفيذه', isBot: true)));
-      _scrollToBottom();
-    });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() => _chatMessages.add(_ChatMessage(
+          text: data['reply'] ?? '✅ تم استقبال الأمر',
+          isBot: true,
+        )));
+      } else {
+        setState(() => _chatMessages.add(_ChatMessage(
+          text: '⚠️ تعذر الاتصال بالدرون',
+          isBot: true,
+        )));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _chatMessages.add(_ChatMessage(
+        text: '❌ لا يوجد اتصال بالدرون - تأكدي أن TypeFly يعمل على الكمبيوتر',
+        isBot: true,
+      )));
+    }
+    _scrollToBottom();
   }
 
   void _emergencyLanding() {
