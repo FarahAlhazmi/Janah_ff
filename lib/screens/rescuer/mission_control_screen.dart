@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:janah_complete/services/flask_api_service.dart';
+import 'package:janah_complete/screens/rescuer/Verification_screen.dart';
 
 // ─── Setup Phase ──────────────────────────────────────────────────────────────
 enum _SetupPhase { idle, checking, uploading, polling, ready, error }
@@ -230,11 +231,27 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
       (event) async {
         if (!mounted) return;
         final content = event['content'] as String? ?? '';
+        final cv = event['cv'] as Map<String, dynamic>?;
+
         if (content.isNotEmpty) {
           await _writeMissionMessage(
             text: content,
             isBot: true,
             isAlert: true,
+          );
+        }
+
+        if (cv != null && mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => VerificationScreen(
+                reportId: widget.reportId,
+                matchScore: (cv['match_score'] as num?)?.toInt() ?? 0,
+                colorMatch: cv['color_match'] as bool? ?? false,
+                alertType: cv['alert_type'] as String? ?? 'candidate',
+              ),
+            ),
           );
         }
       },

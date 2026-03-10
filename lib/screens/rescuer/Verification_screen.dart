@@ -1,14 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:janah_complete/services/flask_api_service.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String reportId;
   final int pointNumber;
+  final int matchScore;
+  final bool colorMatch;
+  final String alertType;
 
   const VerificationScreen({
     super.key,
     this.reportId = '',
     this.pointNumber = 1,
+    this.matchScore = 0,
+    this.colorMatch = false,
+    this.alertType = 'candidate',
   });
 
   @override
@@ -39,6 +47,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               ElevatedButton(
                 onPressed: () async {
                   Navigator.pop(context);
+                  await FlaskApiService.confirmTarget();
                   if (widget.reportId.isNotEmpty) {
                     await FirebaseFirestore.instance.collection('reports').doc(widget.reportId).update({'status': 'found'});
                   }
@@ -67,7 +76,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             ElevatedButton(
-              onPressed: () { Navigator.pop(context); Navigator.pop(context); },
+              onPressed: () async {
+                Navigator.pop(context);
+                await FlaskApiService.rejectTarget();
+                if (mounted) Navigator.pop(context);
+              },
               style: ElevatedButton.styleFrom(backgroundColor: _red),
               child: const Text('متابعة البحث', style: TextStyle(color: Colors.white)),
             ),
@@ -116,6 +129,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           final data = snap.data?.data() as Map<String, dynamic>? ?? {};
                           final childName = data['childName'] ?? 'غير محدد';
                           final location = data['location'] ?? 'غير محدد';
+                          final imageBase64 = data['imageBase64'] as String? ?? '';
 
                           return SingleChildScrollView(
                             padding: const EdgeInsets.all(16),
@@ -178,7 +192,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                                 Container(
                                                   height: 130,
                                                   decoration: BoxDecoration(color: const Color(0xFFE8E8E8), borderRadius: BorderRadius.circular(12)),
-                                                  child: const Center(child: Icon(Icons.person, size: 50, color: Color(0xFF9E9E9E))),
+                                                  clipBehavior: Clip.antiAlias,
+                                                  child: imageBase64.isNotEmpty
+                                                      ? Image.memory(base64Decode(imageBase64), fit: BoxFit.cover, width: double.infinity)
+                                                      : const Center(child: Icon(Icons.person, size: 50, color: Color(0xFF9E9E9E))),
                                                 ),
                                                 const SizedBox(height: 6),
                                                 Text(childName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), textAlign: TextAlign.center),
@@ -240,9 +257,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                            Text('توصية الذكاء الاصطناعي', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF2E7D32))),
-                                            Text('مطابقة محتملة!', style: TextStyle(fontSize: 12, color: Color(0xFF388E3C))),
+                                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                            const Text('توصية الذكاء الاصطناعي', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF2E7D32))),
+                                            Text(widget.alertType == 'confirmed' ? 'مطابقة مؤكدة!' : 'مطابقة محتملة!', style: const TextStyle(fontSize: 12, color: Color(0xFF388E3C))),
                                           ]),
                                           Container(
                                             padding: const EdgeInsets.all(10),
@@ -257,21 +274,21 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                           Expanded(
                                             child: ClipRRect(
                                               borderRadius: BorderRadius.circular(6),
-                                              child: LinearProgressIndicator(value: 0.82, backgroundColor: Colors.green.shade100, valueColor: const AlwaysStoppedAnimation<Color>(_green), minHeight: 10),
+                                              child: LinearProgressIndicator(value: widget.matchScore / 100.0, backgroundColor: Colors.green.shade100, valueColor: const AlwaysStoppedAnimation<Color>(_green), minHeight: 10),
                                             ),
                                           ),
                                           const SizedBox(width: 12),
-                                          const Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                                            Text('82%', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF2E7D32), fontSize: 22)),
-                                            Text('نسبة الثقة', style: TextStyle(fontSize: 11, color: Color(0xFF66BB6A))),
+                                          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                                            Text('${widget.matchScore}%', style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF2E7D32), fontSize: 22)),
+                                            const Text('نسبة الثقة', style: TextStyle(fontSize: 11, color: Color(0xFF66BB6A))),
                                           ]),
                                         ],
                                       ),
                                       const SizedBox(height: 14),
                                       const Text('أسباب التوصية:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2D2D2D))),
                                       const SizedBox(height: 8),
-                                      const _AiReason(text: 'تطابق ملامح الوجه: 78%'),
-                                      const _AiReason(text: 'تطابق الملابس: 85%'),
+                                      _AiReason(text: 'تطابق ملامح الوجه: ${widget.matchScore}%'),
+                                      _AiReason(text: 'تطابق الملابس: ${widget.colorMatch ? "مطابق ✓" : "غير مطابق ✗"}'),
                                       const _AiReason(text: 'الموقع قريب من آخر ظهور مسجل'),
                                       const SizedBox(height: 12),
                                       Container(
