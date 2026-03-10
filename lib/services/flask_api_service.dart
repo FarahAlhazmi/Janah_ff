@@ -10,7 +10,8 @@ import 'package:http/http.dart' as http;
 /// ← Change this IP to match the computer running TypeFly:
 /// (must be on the same WiFi network)
 class FlaskApiService {
-  static String baseUrl = 'http://192.168.1.9:50000';
+  // ← Android emulator: 10.0.2.2 | Real device on WiFi: 192.168.1.9
+  static String baseUrl = 'http://10.0.2.2:50000';
 
   // ─────────────────────────────────────────────
   // Phase 1 — Health Check
@@ -201,6 +202,37 @@ class FlaskApiService {
 
   /// MJPEG live video feed URL from the drone camera.
   static String get videoFeedUrl => '$baseUrl/robot-pov/sim_tello';
+
+  // ─────────────────────────────────────────────
+  // Phase 6 — Target Confirmation
+  // ─────────────────────────────────────────────
+
+  /// POST /confirm-target
+  static Future<void> confirmTarget() async {
+    try {
+      await http
+          .post(Uri.parse('$baseUrl/confirm-target'))
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
+  }
+
+  /// POST /reject-target
+  static Future<void> rejectTarget() async {
+    try {
+      await http
+          .post(Uri.parse('$baseUrl/reject-target'))
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
+  }
+
+  /// POST /approve-plan
+  static Future<void> approvePlan() async {
+    try {
+      await http
+          .post(Uri.parse('$baseUrl/approve-plan'))
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
+  }
 
   // ─────────────────────────────────────────────
   // Private — SSE Parser
