@@ -95,11 +95,15 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
     }
     if (!mounted) return;
 
-    // Phase 2B — Poll until FaceNet finishes processing embeddings
+    // Phase 2B — Poll until FaceNet finishes (max 30 seconds)
+    // If face recognition is disabled on the server, setup stays false forever
+    // → break after timeout and proceed anyway
     setState(() => _setupPhase = _SetupPhase.polling);
+    final deadline = DateTime.now().add(const Duration(seconds: 30));
     while (mounted) {
       final status = await FlaskApiService.getReferenceStatus();
       if (status['setup'] == true) break;
+      if (DateTime.now().isAfter(deadline)) break;
       await Future.delayed(const Duration(seconds: 1));
     }
     if (!mounted) return;
