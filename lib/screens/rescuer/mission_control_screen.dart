@@ -821,34 +821,44 @@ class _MissionControlScreenState extends State<MissionControlScreen> {
               const SizedBox(height: 16),
 
               // ── نقاط الاشتباه ─────────────────────────────────────────────
-              if (_suspiciousPoints.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4))
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(children: [
-                        Icon(Icons.location_searching, color: Color(0xFF3D5A6C), size: 18),
-                        SizedBox(width: 8),
-                        Text('نقاط الاشتباه',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                      ]),
-                      const SizedBox(height: 12),
-                      ..._suspiciousPoints.map((p) => _buildSuspiciousCard(p)),
-                    ],
-                  ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ],
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(children: [
+                      Icon(Icons.location_searching, color: Color(0xFF3D5A6C), size: 18),
+                      SizedBox(width: 8),
+                      Text('نقاط الاشتباه',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    ]),
+                    const SizedBox(height: 12),
+                    if (_suspiciousPoints.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            'لا توجد نقاط اشتباه بعد',
+                            style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+                          ),
+                        ),
+                      )
+                    else
+                      ..._suspiciousPoints.map((p) => _buildSuspiciousCard(p)),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: 16),
 
